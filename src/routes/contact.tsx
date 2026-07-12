@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Reveal, Eyebrow } from "../components/primitives";
-import { useState } from "react";
-import { Mail, MapPin, Calendar, Linkedin, Twitter, Github, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getCalApi } from "@calcom/embed-react";
+import { Mail, MapPin, Calendar, Linkedin, Twitter, Github, ArrowRight, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -13,6 +14,11 @@ export const Route = createFileRoute("/contact")({
   }),
 });
 
+// TODO: replace with your real Cal.com event link, e.g. "otax-tech/30min"
+const CAL_LINK = "https://cal.com/christian-otasowie-b2modl/30min";
+// TODO: replace with your real n8n production webhook URL
+const N8N_WEBHOOK_URL = "https://n8n.otaxtechnologies.com/webhook/contact-form";
+
 const FAQ = [
   { q: "How quickly can you start?", a: "Typically within 1–2 weeks of the discovery call. We keep a small bench of senior engineers reserved for fast starts." },
   { q: "What does a typical engagement cost?", a: "Discovery is complimentary. Audit engagements start at $6,500. Delivery engagements are fixed-scope, typically $18k–$150k depending on system complexity." },
@@ -22,8 +28,56 @@ const FAQ = [
   { q: "Which AI models do you use?", a: "The right one for the job. We regularly ship on OpenAI, Anthropic, ElevenLabs and select open-weights models. Model choice is part of the strategy." },
 ];
 
+type FormStatus = "idle" | "loading" | "success" | "error";
+
 function ContactPage() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<FormStatus>("idle");
+
+  // Load Cal.com embed API once on mount
+  useEffect(() => {
+    (async () => {
+      const cal = await getCalApi({ namespace: "strategy-call" });
+      cal("ui", {
+        theme: "dark",
+        styles: { branding: { brandColor: "#6d5efc" } }, // TODO: match your --color-primary
+        hideEventTypeDetails: false,
+      });
+    })();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("loading");
+
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const payload = {
+      name: data.get("name"),
+      email: data.get("email"),
+      company: data.get("company"),
+      role: data.get("role"),
+      message: data.get("message"),
+      submittedAt: new Date().toISOString(),
+      source: "contact-page",
+    };
+
+    try {
+      const res = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
+
+      setStatus("success");
+      form.reset();
+    } catch (err) {
+      console.error("Contact form submission failed:", err);
+      setStatus("error");
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -37,34 +91,50 @@ function ContactPage() {
         <div className="container-x grid gap-6 lg:grid-cols-[1.2fr_1fr]">
           {/* Form */}
           <Reveal>
-            <form
-              onSubmit={(e) => { e.preventDefault(); setSent(true); }}
-              className="card-elevated p-8 md:p-10"
-            >
+            <form onSubmit={handleSubmit} className="card-elevated p-8 md:p-10">
               <Eyebrow>Send us a note</Eyebrow>
               <h2 className="mt-4 text-2xl md:text-3xl font-medium tracking-tight">Tell us about your business.</h2>
               <p className="mt-2 text-sm text-muted-foreground">We reply within one business day.</p>
 
               <div className="mt-8 grid gap-5 md:grid-cols-2">
-                <Field label="Full name" name="name" placeholder="Jane Cole" />
-                <Field label="Work email" name="email" type="email" placeholder="jane@company.com" />
+                <Field label="Full name" name="name" placeholder="Jane Cole" required />
+                <Field label="Work email" name="email" type="email" placeholder="jane@company.com" required />
                 <Field label="Company" name="company" placeholder="Acme, Inc." />
                 <Field label="Role" name="role" placeholder="COO" />
               </div>
               <div className="mt-5">
-                <label className="text-xs uppercase tracking-[0.14em] text-muted-foreground">What are you trying to solve?</label>
+                <label className="text-xs uppercase tracking-[0.14em] text-muted-foreground" htmlFor="message">
+                  What are you trying to solve?
+                </label>
                 <textarea
+                  id="message"
+                  name="message"
                   rows={5}
+                  required
                   className="mt-2 w-full rounded-xl bg-surface/60 border border-hairline px-4 py-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-ring transition"
                   placeholder="A short description of the process, team or outcome you'd like to improve."
                 />
               </div>
+
               <div className="mt-8 flex items-center justify-between gap-4 flex-wrap">
                 <p className="text-xs text-muted-foreground">By submitting, you agree to our privacy terms.</p>
-                <button className="btn-primary" type="submit">
-                  {sent ? "Message sent — thanks" : "Send message"} <ArrowRight size={14} />
+                <button className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed" type="submit" disabled={status === "loading"}>
+                  {status === "loading" ? (
+                    <>Sending <Loader2 size={14} className="animate-spin" /></>
+                  ) : (
+                    <>Send message <ArrowRight size={14} /></>
+                  )}
                 </button>
               </div>
+
+              {status === "success" && (
+                <p className="mt-4 text-sm text-primary">Message sent — thanks. We'll be in touch within one business day.</p>
+              )}
+              {status === "error" && (
+                <p className="mt-4 text-sm text-destructive">
+                  Something went wrong sending your message. Please try again, or email us directly at hello@otax.tech.
+                </p>
+              )}
             </form>
           </Reveal>
 
@@ -75,13 +145,12 @@ function ContactPage() {
                 <Eyebrow>Book a call</Eyebrow>
                 <h3 className="mt-4 text-xl font-medium tracking-tight">Prefer a calendar?</h3>
                 <p className="mt-2 text-sm text-muted-foreground">Grab a 30-minute strategy slot directly.</p>
-                <div className="mt-6 rounded-xl border border-hairline bg-surface/40 p-6 grid gap-3 grid-cols-7 text-center text-xs text-muted-foreground">
-                  {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <div key={i} className="opacity-60">{d}</div>)}
-                  {Array.from({ length: 28 }).map((_, i) => (
-                    <div key={i} className={`aspect-square flex items-center justify-center rounded ${i === 12 ? "bg-primary text-primary-foreground" : "hover:bg-surface"}`}>{i + 1}</div>
-                  ))}
-                </div>
-                <button className="mt-6 btn-ghost w-full justify-center">
+                <button
+                  data-cal-namespace="strategy-call"
+                  data-cal-link={CAL_LINK}
+                  data-cal-config='{"layout":"month_view","theme":"dark"}'
+                  className="mt-6 btn-ghost w-full justify-center"
+                >
                   <Calendar size={14} /> Open scheduler
                 </button>
               </div>
@@ -91,12 +160,10 @@ function ContactPage() {
               <div className="card-elevated p-8">
                 <div className="grid gap-5">
                   <Info icon={Mail} label="Email" value="hello@otax.tech" />
-                  <Info icon={MapPin} label="Office" value="88 Wallace Street, Suite 1400 · New York, NY" />
+                  <Info icon={MapPin} label="Office" value="15 Lekki Estate Rd, Lekki Phase I, Lagos 106104, Lagos" />
                 </div>
                 <div className="mt-8 hairline-t pt-6 flex items-center gap-3">
                   <SocialLink icon={Linkedin} />
-                  <SocialLink icon={Twitter} />
-                  <SocialLink icon={Github} />
                 </div>
               </div>
             </Reveal>
@@ -143,12 +210,12 @@ function ContactPage() {
   );
 }
 
-function Field({ label, name, type = "text", placeholder }: any) {
+function Field({ label, name, type = "text", placeholder, required }: any) {
   return (
     <div>
       <label className="text-xs uppercase tracking-[0.14em] text-muted-foreground" htmlFor={name}>{label}</label>
       <input
-        id={name} name={name} type={type} placeholder={placeholder}
+        id={name} name={name} type={type} placeholder={placeholder} required={required}
         className="mt-2 w-full rounded-xl bg-surface/60 border border-hairline px-4 py-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-ring transition"
       />
     </div>
@@ -169,7 +236,7 @@ function Info({ icon: Icon, label, value }: any) {
 }
 function SocialLink({ icon: Icon }: any) {
   return (
-    <a href="#" className="h-9 w-9 rounded-full border border-hairline bg-surface flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
+    <a href="https://www.linkedin.com/company/otax-technologies/" className="h-9 w-9 rounded-full border border-hairline bg-surface flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
       <Icon size={15} />
     </a>
   );

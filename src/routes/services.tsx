@@ -23,7 +23,7 @@ const SERVICES = [
     desc: "Custom AI systems designed around your business — not generic tools bolted onto your workflow.",
     benefits: ["Eliminate 40–70% of repetitive knowledge work", "Faster, more consistent decisions", "Reduce human error at scale"],
     ideal: "Operators drowning in repetitive knowledge work — support, ops, analysis.",
-    stack: ["OpenAI", "Anthropic", "LangChain", "Supabase"],
+    stack: ["OpenAI", "Anthropic", "LangChain", "Supabase", "LangGraph"],
   },
   {
     icon: Workflow,
@@ -31,7 +31,7 @@ const SERVICES = [
     desc: "Reliable, observable pipelines that connect your tools and remove the manual glue between them.",
     benefits: ["Cut turnaround time by 60–90%", "Full audit trail on every run", "Scale without adding headcount"],
     ideal: "Teams stitching together Notion, Slack, HubSpot, Airtable and spreadsheets.",
-    stack: ["n8n", "Zapier", "Make", "Node.js"],
+    stack: ["n8n", "Zapier", "Make", "Node.js", "Python", "JavaScript"],
   },
   {
     icon: MessageSquare,
@@ -47,7 +47,7 @@ const SERVICES = [
     desc: "Human-quality voice agents for inbound and outbound calls — booking, qualification, follow-up and support.",
     benefits: ["Answer 100% of inbound calls", "Consistent qualification and handoff", "Scale outbound without an SDR army"],
     ideal: "Healthcare, real estate, home services and any business with heavy phone volume.",
-    stack: ["ElevenLabs", "Vapi", "Twilio", "OpenAI"],
+    stack: ["ElevenLabs", "Vapi", "Retell", "Twilio", "OpenAI"],
   },
   {
     icon: Users,
@@ -55,7 +55,7 @@ const SERVICES = [
     desc: "Turn your CRM into a self-driving pipeline — enrichment, scoring, routing and follow-up on autopilot.",
     benefits: ["Higher pipeline coverage per rep", "No leads left cold in the queue", "Cleaner data, better forecasts"],
     ideal: "Sales teams on HubSpot, Salesforce or Pipedrive with pipeline leakage.",
-    stack: ["HubSpot API", "Salesforce", "Clay", "n8n"],
+    stack: ["HubSpot API", "Salesforce", "GoHighLevel", "Clay", "n8n"],
   },
   {
     icon: Cog,

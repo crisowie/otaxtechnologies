@@ -58,10 +58,7 @@ export function SiteFooter() {
           <FooterCol
             title="Socials"
             links={[
-              ["LinkedIn", "/contact"],
-              ["X / Twitter", "/contact"],
-              ["GitHub", "/contact"],
-              ["YouTube", "/contact"],
+              ["LinkedIn", "https://www.linkedin.com/company/otax-technologies/"],
             ]}
           />
         </div>
