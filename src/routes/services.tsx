@@ -121,7 +121,7 @@ function ServicesPage() {
       <PageHeader
         eyebrow="Services"
         title={<>Twelve ways to give your team <span className="text-muted-foreground">back its time.</span></>}
-        description="Every service is a system, not a feature. Every engagement ends with something running in production — documented, monitored, and owned by your team."
+        description="Every service is a system, not a feature. Every engagement ends with something running in production documented, monitored, and owned by your team."
       />
 
       <section className="pb-24">
